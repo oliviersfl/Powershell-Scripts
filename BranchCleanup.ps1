@@ -1,3 +1,34 @@
+<#
+.SYNOPSIS
+    BranchCleanup.ps1 is a PowerShell script that identifies and deletes local Git branches that do not have a corresponding remote branch and are not currently checked out in any worktree.
+
+.PARAMETERS
+    -NoFetch: A switch parameter. If specified, the script will skip the 'git fetch' command. Useful when you've recently fetched remote updates and want to avoid fetching again.
+    
+.USAGE
+    ./BranchCleanup.ps1               # Run the script normally.
+    ./BranchCleanup.ps1 -NoFetch      # Run the script without fetching updates from remote.
+    
+.DESCRIPTION
+    The script first checks if the NoFetch parameter is not specified, in which case it fetches updates from the remote repository. It then identifies all local and remote branches.
+
+    The script traverses through each local worktree, identifies the currently checked-out branch, and excludes these branches from the list of local branches.
+
+    It then checks the modified list of local branches against the list of remote branches, identifying which local branches do not have a corresponding remote branch. These branches are added to the deletion list.
+
+    If any branches are found to be on the deletion list, the script prompts the user for confirmation to proceed with deletion. Upon user confirmation, it attempts to delete each branch, displaying a success or failure message for each one.
+
+    If no branches are on the deletion list, the script informs the user that there are no branches to delete.
+
+    Finally, the script returns the working directory to the original location.
+
+.NOTES
+    The script handles errors resulting from the 'git branch -d' command, hence, it will not stop execution if a branch cannot be deleted.
+    If the script fails to delete a branch, it will print an error message and continue with the next branch.
+
+    It's important to note that the script does not handle other potential Git errors, so if other Git commands fail, they could affect the script's behavior.
+#>
+
 param(
     [switch]$NoFetch
 )
