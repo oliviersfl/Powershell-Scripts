@@ -36,6 +36,12 @@ param (
     [string[]]$only
 )
 
+# Checking if the provided directory path is valid
+if (!(Test-Path -Path $dir -PathType Container)) {
+    Write-Host "Error: The provided directory path is invalid. Please provide a valid path."
+    exit
+}
+
 $folders = 0
 $files = 0
 $output = @()
