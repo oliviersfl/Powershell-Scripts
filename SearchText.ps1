@@ -189,4 +189,4 @@ function Search-Text {
 }
 
 # Call the main function at the end of the script, passing the parameters to it
-Search-Text -DirectoryPath $DirectoryPath -SearchText $SearchText -FileType $FileType -CaseSensitive:$CaseSensitive -Recursive:$Recursive -IncludeLineNumbers:$IncludeLineNumbers -Tree:$Tree
+Search-Text -DirectoryPath (Resolve-Path $DirectoryPath).Path -SearchText $SearchText -FileType $FileType -CaseSensitive:$CaseSensitive -Recursive:$Recursive -IncludeLineNumbers:$IncludeLineNumbers -Tree:$Tree
