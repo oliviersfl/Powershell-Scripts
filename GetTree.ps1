@@ -44,7 +44,7 @@ if (!(Test-Path -Path $dir -PathType Container)) {
 
 $folders = 0
 $files = 0
-$output = @()
+$output = New-Object System.Text.StringBuilder
 
 function Get-Tree {
     param (
@@ -71,13 +71,13 @@ function Get-Tree {
 
         if ($items[$i].PSIsContainer) {
             if ($null -eq $only -or (Get-ChildItem -Path $items[$i].FullName -Include $only -Recurse)) {
-                $script:output += "$prefix$($items[$i].Name)"
+                $null = $script:output.AppendLine("$prefix$($items[$i].Name)")
                 $script:folders = $script:folders + 1
                 Get-Tree -dir $items[$i].FullName -indent $nextIndent -lastItem $lastItem -exclude $exclude -only $only
             }
         } else {
             if ($null -eq $only -or ($only | Where-Object { $items[$i].Name -like $_ })) {
-                $script:output += "$prefix$($items[$i].Name)"
+                $null = $script:output.AppendLine("$prefix$($items[$i].Name)")
                 $script:files = $script:files + 1
             }
         }
@@ -87,10 +87,13 @@ function Get-Tree {
 Get-Tree -dir $dir -exclude $exclude -only $only
 
 if (!$outputFile) {
-    $output | ForEach-Object { Write-Host $_ }
+    Write-Host $output.ToString()
 } else {
-    $output | Out-File -FilePath $outputFile
+    Out-File -InputObject $output.ToString() -FilePath $outputFile
 }
+
+Write-Host ""
+Write-Host "Scanned $files files and $folders directories."
 
 Write-Host ""
 Write-Host "Scanned $files files and $folders directories."
