@@ -46,6 +46,8 @@ $folders = 0
 $files = 0
 $output = New-Object System.Text.StringBuilder
 
+$inaccessibleDirs = 0
+
 function Get-Tree {
     param (
         [Parameter(Mandatory=$true)]
@@ -56,7 +58,14 @@ function Get-Tree {
         [string[]]$only
     )
 
-    $items = Get-ChildItem -Path $dir -Exclude $exclude
+    $items = @()
+    try {
+        $items = Get-ChildItem -Path $dir -Exclude $exclude -ErrorAction Stop
+    } catch {
+        $null = $script:output.AppendLine("$indent[ERROR] Failed to access $dir : $_")
+        $script:inaccessibleDirs++ # Increment the inaccessible directory count
+        return
+    }
 
     for ($i = 0; $i -lt $items.Count; $i++) {
         $lastItem = $i -eq $items.Count - 1
@@ -69,17 +78,21 @@ function Get-Tree {
             $nextIndent = "{0}|  " -f $indent
         }
 
-        if ($items[$i].PSIsContainer) {
-            if ($null -eq $only -or (Get-ChildItem -Path $items[$i].FullName -Include $only -Recurse)) {
-                $null = $script:output.AppendLine("$prefix$($items[$i].Name)")
-                $script:folders = $script:folders + 1
-                Get-Tree -dir $items[$i].FullName -indent $nextIndent -lastItem $lastItem -exclude $exclude -only $only
+        try {
+            if ($items[$i].PSIsContainer) {
+                if ($null -eq $only -or (Get-ChildItem -Path $items[$i].FullName -Include $only -Recurse)) {
+                    $null = $script:output.AppendLine("$prefix$($items[$i].Name)")
+                    $script:folders = $script:folders + 1
+                    Get-Tree -dir $items[$i].FullName -indent $nextIndent -lastItem $lastItem -exclude $exclude -only $only
+                }
+            } else {
+                if ($null -eq $only -or ($only | Where-Object { $items[$i].Name -like $_ })) {
+                    $null = $script:output.AppendLine("$prefix$($items[$i].Name)")
+                    $script:files = $script:files + 1
+                }
             }
-        } else {
-            if ($null -eq $only -or ($only | Where-Object { $items[$i].Name -like $_ })) {
-                $null = $script:output.AppendLine("$prefix$($items[$i].Name)")
-                $script:files = $script:files + 1
-            }
+        } catch {
+            $null = $script:output.AppendLine("$prefix[ERROR] Failed to access $($items[$i].Name) : $_")
         }
     }
 }
@@ -95,5 +108,6 @@ if (!$outputFile) {
 Write-Host ""
 Write-Host "Scanned $files files and $folders directories."
 
-Write-Host ""
-Write-Host "Scanned $files files and $folders directories."
+if ($inaccessibleDirs -gt 0) {
+    Write-Host ("Unable to access " + $inaccessibleDirs + " directories.") -ForegroundColor Red
+}
