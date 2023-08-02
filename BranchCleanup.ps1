@@ -117,6 +117,12 @@ function ForceDelete-Branches {
     }
 }
 
+$gitDir = git rev-parse --git-dir 2>$null
+
+if ($null -eq $gitDir) {
+    Write-Host "Error: The current directory does not appear to be a Git repository. Please run the script inside a Git repository." -ForegroundColor Red
+    exit
+}
 $original_location = Get-Location
 
 # Fetching remote data if required
