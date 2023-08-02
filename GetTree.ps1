@@ -68,22 +68,24 @@ function Get-Tree {
     }
 
     for ($i = 0; $i -lt $items.Count; $i++) {
-        $lastItem = $i -eq $items.Count - 1
+        $isLastItem = $i -eq $items.Count - 1
+        $prefix = ""
+        $nextIndent = ""
 
-        if ($lastItem) {
-            $prefix = "{0}|- " -f $indent
-            $nextIndent = "{0}   " -f $indent
+        if ($isLastItem) {
+            $prefix = "{0}└── " -f $indent
+            $nextIndent = "{0}    " -f $indent
         } else {
-            $prefix = "{0}|- " -f $indent
-            $nextIndent = "{0}|  " -f $indent
+            $prefix = "{0}├── " -f $indent
+            $nextIndent = "{0}│   " -f $indent
         }
 
         try {
             if ($items[$i].PSIsContainer) {
                 if ($null -eq $only -or (Get-ChildItem -Path $items[$i].FullName -Include $only -Recurse)) {
-                    $null = $script:output.AppendLine("$prefix$($items[$i].Name)")
+                    $null = $script:output.AppendLine("$prefix($($items[$i].Name))") # Parentheses added here
                     $script:folders = $script:folders + 1
-                    Get-Tree -dir $items[$i].FullName -indent $nextIndent -lastItem $lastItem -exclude $exclude -only $only
+                    Get-Tree -dir $items[$i].FullName -indent $nextIndent -lastItem $isLastItem -exclude $exclude -only $only
                 }
             } else {
                 if ($null -eq $only -or ($only | Where-Object { $items[$i].Name -like $_ })) {
