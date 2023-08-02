@@ -4,7 +4,7 @@
     Provides the option to include line numbers in output and search subdirectories recursively. 
     Also has the option to display the file paths in a tree structure.
 
-.PARAMETER DirectoryPath
+.PARAMETER dir
     The path to the directory in which to perform the search.
 
 .PARAMETER SearchText
@@ -27,12 +27,12 @@
     (Optional) A switch parameter. If provided, the output file paths are displayed in a tree structure.
 
 .EXAMPLE
-    .\Search-Text.ps1 -DirectoryPath "C:\Scripts" -SearchText "function" -FileType "ps1" -CaseSensitive -Recursive -IncludeLineNumbers -Tree
+    .\Search-Text.ps1 -dir "C:\Scripts" -SearchText "function" -FileType "ps1" -CaseSensitive -Recursive -IncludeLineNumbers -Tree
 #>
 
 param (
     [Parameter(Mandatory=$true)]
-    [string]$DirectoryPath,
+    [string]$dir,
 
     [Parameter(Mandatory=$true)]
     [string]$SearchText,
@@ -68,7 +68,7 @@ function Get-RelativePath {
 function Get-Files {
     param (
         [Parameter(Mandatory=$true)]
-        [string]$DirectoryPath,
+        [string]$dir,
 
         [Parameter(Mandatory=$false)]
         [string]$FileType,
@@ -79,15 +79,15 @@ function Get-Files {
 
     if ($FileType) {
         if ($Recursive) {
-            return Get-ChildItem -Path $DirectoryPath -Filter "*.$FileType" -Recurse -File
+            return Get-ChildItem -Path $dir -Filter "*.$FileType" -Recurse -File
         } else {
-            return Get-ChildItem -Path $DirectoryPath -Filter "*.$FileType" -File
+            return Get-ChildItem -Path $dir -Filter "*.$FileType" -File
         }
     } else {
         if ($Recursive) {
-            return Get-ChildItem -Path $DirectoryPath -Recurse -File
+            return Get-ChildItem -Path $dir -Recurse -File
         } else {
-            return Get-ChildItem -Path $DirectoryPath -File
+            return Get-ChildItem -Path $dir -File
         }
     }
 }
@@ -160,7 +160,7 @@ function Search-TextInFile {
 function Search-Text {
     param (
         [Parameter(Mandatory=$true)]
-        [string]$DirectoryPath,
+        [string]$dir,
 
         [Parameter(Mandatory=$true)]
         [string]$SearchText,
@@ -181,12 +181,12 @@ function Search-Text {
         [switch]$Tree
     )
 
-    $files = Get-Files -DirectoryPath $DirectoryPath -FileType $FileType -Recursive:$Recursive
+    $files = Get-Files -dir $dir -FileType $FileType -Recursive:$Recursive
 
     foreach ($file in $files) {
-        Search-TextInFile -FilePath $file.FullName -SearchText $SearchText -CaseSensitive:$CaseSensitive -IncludeLineNumbers:$IncludeLineNumbers -RootPath $DirectoryPath -Tree:$Tree
+        Search-TextInFile -FilePath $file.FullName -SearchText $SearchText -CaseSensitive:$CaseSensitive -IncludeLineNumbers:$IncludeLineNumbers -RootPath $dir -Tree:$Tree
     }
 }
 
 # Call the main function at the end of the script, passing the parameters to it
-Search-Text -DirectoryPath (Resolve-Path $DirectoryPath).Path -SearchText $SearchText -FileType $FileType -CaseSensitive:$CaseSensitive -Recursive:$Recursive -IncludeLineNumbers:$IncludeLineNumbers -Tree:$Tree
+Search-Text -dir (Resolve-Path $dir).Path -SearchText $SearchText -FileType $FileType -CaseSensitive:$CaseSensitive -Recursive:$Recursive -IncludeLineNumbers:$IncludeLineNumbers -Tree:$Tree
