@@ -73,12 +73,12 @@ function Get-Tree {
         $nextIndent = ""
 
         if ($isLastItem) {
-            $prefix = "{0}└── " -f $indent
-            $nextIndent = "{0}    " -f $indent
-        } else {
-            $prefix = "{0}├── " -f $indent
-            $nextIndent = "{0}│   " -f $indent
-        }
+			$prefix = $indent + [char]9492 + [char]9472 + [char]9472 + " "
+			$nextIndent = $indent + "    "
+		} else {
+			$prefix = $indent + [char]9500 + [char]9472 + [char]9472 + " "
+			$nextIndent = $indent + [char]9474 + "   "
+		}
 
         try {
             if ($items[$i].PSIsContainer) {
