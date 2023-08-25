@@ -10,23 +10,19 @@ try {
 		$result = $pingOutput | Select-String "Reply from"
 		$timeout = $pingOutput | Select-String "Request timed out."
 
-		if ($result) {
-			if ($pingTimes.Count -ge 100) {
-				$oldestPing = $pingTimes.Dequeue()
-				if ($oldestPing -eq "timeout") {
-					$timeoutCount--
-				}
+        # Dequeue oldest result if queue has reached capacity and adjust the timeout count accordingly
+		if ($pingTimes.Count -ge 100) {
+			$oldestPing = $pingTimes.Dequeue()
+			if ($oldestPing -eq "timeout") {
+				$timeoutCount--
 			}
+		}
+
+		if ($result) {
 			# Extract ping time in ms
 			$time = [int](($result -split "time=")[1] -split "ms")[0].Trim()
 			$pingTimes.Enqueue($time)
 		} elseif ($timeout) {
-			if ($pingTimes.Count -ge 100) {
-				$oldestPing = $pingTimes.Dequeue()
-				if ($oldestPing -ne "timeout") {
-					$timeoutCount--
-				}
-			}
 			$pingTimes.Enqueue("timeout")
 			$timeoutCount++
 		}
