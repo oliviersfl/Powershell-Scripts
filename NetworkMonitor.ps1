@@ -50,11 +50,27 @@ while ($true) {
     $uploadSpeed = $currentSentBytes - $initialSentBytes
 
     # Display the results in the desired format
-    $downloadMetric = ConvertToLargestUnit -bytesPerSecond $downloadSpeed
-    $uploadMetric = ConvertToLargestUnit -bytesPerSecond $uploadSpeed
+	$downloadMetric = ConvertToLargestUnit -bytesPerSecond $downloadSpeed
+	$uploadMetric = ConvertToLargestUnit -bytesPerSecond $uploadSpeed
 
-    # Clear the current line and overwrite with new values
-    Write-Host -NoNewline ("`rDownload: $downloadMetric | Upload: $uploadMetric" + (' ' * 10))
+	# Clear the current line
+	Write-Host -NoNewline "`r"
+
+	# Write the download metrics in red with a down arrow
+	Write-Host -NoNewline "Download: " -ForegroundColor Red
+	Write-Host -NoNewline ([char]8595 + " " + $downloadMetric + " ") -ForegroundColor Red
+
+	# Write the separator (pipe)
+	Write-Host -NoNewline "| "
+
+	# Write the upload metrics in green with an up arrow
+	Write-Host -NoNewline "Upload: " -ForegroundColor Green
+	Write-Host -NoNewline ([char]8593 + " " + $uploadMetric + " ") -ForegroundColor Green
+
+	# Add extra spaces to clear any remaining characters from the last line
+	Write-Host -NoNewline (' ' * 10)
+
+
 
     # Set the current stats as the initial stats for the next iteration
     $initialReceivedBytes = $currentReceivedBytes
