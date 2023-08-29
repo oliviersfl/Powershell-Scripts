@@ -1,4 +1,25 @@
-$adapterName = "Wi-Fi" # Change to your adapter's name
+<#
+.SYNOPSIS
+    This PowerShell script monitors the upload and download speeds of a network adapter.
+
+.DESCRIPTION
+    The script continuously fetches network statistics from a specified network adapter and calculates the current upload and download speeds. It outputs these speeds in a human-readable format (Bytes/s, KB/s, or MB/s) in the console window. The default adapter is set to "Wi-Fi", but this can be overridden with the `-adapterName` parameter.
+
+.PARAMETER adapterName
+    The name of the network adapter to monitor. Defaults to "Wi-Fi".
+
+.EXAMPLE
+    .\NetworkMonitor.ps1
+    Monitors the "Wi-Fi" adapter's network statistics and displays the upload and download speeds.
+
+.EXAMPLE
+    .\NetworkMonitor.ps1 -adapterName "Ethernet"
+    Monitors the "Ethernet" adapter's network statistics and displays the upload and download speeds.
+#>
+
+param (
+    [string]$adapterName = "Wi-Fi"
+)
 
 function ConvertToLargestUnit {
     param($bytesPerSecond)
