@@ -1,3 +1,27 @@
+<#
+.SYNOPSIS
+    This PowerShell script monitors user activity and idle time on a Windows system.
+
+.DESCRIPTION
+    The script uses P/Invoke to call native Windows API functions for tracking the last time the user interacted with the system.
+    It then calculates the duration of user activity and idle time, displaying this information continuously in the console.
+
+.PARAMETER idleTime
+    Specifies the threshold for idle time in minutes. If user idle time exceeds this threshold, the active time counter is reset.
+    The default value is 2 minutes.
+
+.EXAMPLE
+    .\Active.ps1 -idleTime 5
+    Runs the script setting the idle time threshold to 5 minutes.
+
+.NOTES
+    The script updates every second and adjusts its output to fit the console window width.
+#>
+
+param (
+    [int]$idleTime = 2  # idle time in minutes; default is set to 2
+)
+
 # Define a P/Invoke to call a native function for getting last input time
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -TypeDefinition @"
@@ -24,7 +48,6 @@ public class UserInput {
 "@
 
 # Initialize variables
-$idleTime = 2 # idle time in minutes; you can change this value or set it through a parameter
 $lastActiveTime = $null  # Initialize to $null
 $activeDuration = [TimeSpan]::FromSeconds(0)
 $totalActiveDuration = [TimeSpan]::FromSeconds(0)
