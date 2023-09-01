@@ -48,7 +48,8 @@ public class UserInput {
 "@
 
 # Initialize variables
-$lastActiveTime = $null  # Initialize to $null
+$lastActiveTime = $null
+$firstActiveTime = $null
 $activeDuration = [TimeSpan]::FromSeconds(0)
 $totalActiveDuration = [TimeSpan]::FromSeconds(0)
 $isActive = $false  # New flag variable to track active state
@@ -73,17 +74,25 @@ while ($true) {
         $activeDuration = $activeDuration.Add([TimeSpan]::FromSeconds(1))
         $totalActiveDuration = $totalActiveDuration.Add([TimeSpan]::FromSeconds(1))
         
-        # Set $lastActiveTime only when first becoming active
+        # Set $lastActiveTime and $firstActiveTime only when first becoming active
         if (-not $isActive) {
             $lastActiveTime = Get-Date
             $isActive = $true
+            
+            if (-not $hasBeenActive) {
+                $firstActiveTime = Get-Date  # Set this only the first time the user becomes active
+                $hasBeenActive = $true
+            }
         }
 
-        $output = "You've been active for $($activeDuration.ToString('hh\:mm\:ss')) since $lastActiveTime. Total active time in this session: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
+        # Update this line to include $firstActiveTime
+        #$output = "You've been active for $($activeDuration.ToString('hh\:mm\:ss')) since $lastActiveTime. Total active time in this session since ${firstActiveTime}: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
+		$output = "Active: $($activeDuration.ToString('hh\:mm\:ss')) Since: $lastActiveTime. Total: $($totalActiveDuration.ToString('hh\:mm\:ss')) Since: $firstActiveTime"
     } else {
         $activeDuration = [TimeSpan]::FromSeconds(0)
         $isActive = $false  # Reset flag when becoming idle
-        $output = "Idle time exceeded $idleTime minutes. Resetting active time counter. Total active time in this session so far: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
+        #$output = "Idle time exceeded $idleTime minutes. Resetting active time counter. Total active time in this session so far: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
+		$output = "Idle: >$idleTime mins. Reset counter. Total: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
     }
 
     # Pad the output string with spaces and then trim it to fit within the console window
