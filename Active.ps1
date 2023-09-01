@@ -24,7 +24,7 @@ public class UserInput {
 "@
 
 # Initialize variables
-$idleTime = 0.05 # idle time in minutes; you can change this value or set it through a parameter
+$idleTime = 2 # idle time in minutes; you can change this value or set it through a parameter
 $lastActiveTime = $null  # Initialize to $null
 $activeDuration = [TimeSpan]::FromSeconds(0)
 $totalActiveDuration = [TimeSpan]::FromSeconds(0)
