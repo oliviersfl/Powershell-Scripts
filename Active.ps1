@@ -1,35 +1,43 @@
 <#
 .SYNOPSIS
-    This PowerShell script monitors user activity and idle time on a Windows system.
+This PowerShell script monitors and displays mouse activity, calculating active and idle periods based on mouse movements.
 
 .DESCRIPTION
-    The script uses P/Invoke to call native Windows API functions for tracking the last time the user interacted with the system.
-    It then calculates the duration of user activity and idle time, displaying this information continuously in the console.
+This script continuously tracks the last mouse input time and calculates the duration of active and idle periods. It's designed for Windows systems and uses native Win32 API functions.
 
-.PARAMETER idleTime
-    Specifies the threshold for idle time in minutes. If user idle time exceeds this threshold, the active time counter is reset.
-    The default value is 2 minutes.
+.PARAMETERS
+idleTime (Optional)
+- Type: Integer
+- Default: 2 minutes
+- Description: Threshold in minutes for determining idle time. If the mouse is inactive longer than this, the user is considered idle.
 
-.EXAMPLE
-    .\Active.ps1 -idleTime 5
-    Runs the script setting the idle time threshold to 5 minutes.
+.FUNCTIONALITY
+- Monitors mouse activity using P/Invoke and .NET interop.
+- Updates active and total active durations based on mouse activity.
+- Outputs real-time information about active and idle durations.
 
-.NOTES
-    The script updates every second and adjusts its output to fit the console window width.
+.USAGE
+- Run in a PowerShell window.
+- Displays real-time mouse activity information.
+- To stop, use Ctrl+C.
+
+.APPLICATION
+Useful for tracking user activity, automated testing, or triggering events after periods of inactivity.
+
 #>
 
 param (
-    [int]$idleTime = 2  # idle time in minutes; default is set to 2
+    $idleTime = 2  # idle time in minutes; default is set to 2
 )
 
-# Define a P/Invoke to call a native function for getting last input time
+# Define a P/Invoke to call a native function for getting last mouse input time
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
 
 public class UserInput {
-    [DllImport("user32.dll", SetLastError=false)]
+    [DllImport("user32.dll", SetLastError=true)]
     private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
 
     [StructLayout(LayoutKind.Sequential)]
@@ -38,11 +46,16 @@ public class UserInput {
         public uint dwTime;
     }
 
-    public static uint GetLastInputTime() {
+    public static DateTime GetLastMouseInputTime() {
         LASTINPUTINFO info = new LASTINPUTINFO();
         info.cbSize = (uint)Marshal.SizeOf(info);
-        GetLastInputInfo(ref info);
-        return info.dwTime;
+        if (!GetLastInputInfo(ref info))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+
+        // Convert the last input tick to a DateTime
+        DateTime bootTime = DateTime.Now.AddMilliseconds(-Environment.TickCount);
+        DateTime lastInputTime = bootTime.AddMilliseconds(info.dwTime);
+        return lastInputTime;
     }
 }
 "@
@@ -52,51 +65,45 @@ $lastActiveTime = $null
 $firstActiveTime = $null
 $activeDuration = [TimeSpan]::FromSeconds(0)
 $totalActiveDuration = [TimeSpan]::FromSeconds(0)
-$isActive = $false  # New flag variable to track active state
+$isActive = $false
+$hasBeenActive = $false
 
 # Loop indefinitely
 while ($true) {
     Start-Sleep -Seconds 1
 
-    $lastBootUpTime = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+    try {
+        $lastMouseInputTime = [UserInput]::GetLastMouseInputTime()
+    } catch {
+        Write-Error "Error retrieving last mouse input time: $_"
+        continue
+    }
 
-    # Get system uptime and last input time
-    $systemUptime = [math]::Round(((Get-Date) - $lastBootUpTime).TotalMilliseconds)
-    $lastInputTime = [UserInput]::GetLastInputTime()
-
-    # Calculate idle time
-    $idleDuration = ($systemUptime - $lastInputTime) / 1000
-
-    $consoleWidth = $Host.UI.RawUI.WindowSize.Width  # Get the console window width
-    $maxOutputLength = $consoleWidth - 1  # Adjust the max output length to fit within the console window
+    $idleDuration = ((Get-Date) - $lastMouseInputTime).TotalSeconds
+    $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+    $maxOutputLength = $consoleWidth - 1
 
     if ($idleDuration -lt ($idleTime * 60)) {
         $activeDuration = $activeDuration.Add([TimeSpan]::FromSeconds(1))
         $totalActiveDuration = $totalActiveDuration.Add([TimeSpan]::FromSeconds(1))
-        
-        # Set $lastActiveTime and $firstActiveTime only when first becoming active
+
         if (-not $isActive) {
             $lastActiveTime = Get-Date
             $isActive = $true
-            
+
             if (-not $hasBeenActive) {
-                $firstActiveTime = Get-Date  # Set this only the first time the user becomes active
+                $firstActiveTime = Get-Date
                 $hasBeenActive = $true
             }
         }
 
-        # Update this line to include $firstActiveTime
-        #$output = "You've been active for $($activeDuration.ToString('hh\:mm\:ss')) since $lastActiveTime. Total active time in this session since ${firstActiveTime}: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
-		$output = "Active: $($activeDuration.ToString('hh\:mm\:ss')) Since: $lastActiveTime. Total: $($totalActiveDuration.ToString('hh\:mm\:ss')) Since: $firstActiveTime"
+        $output = "Active: $($activeDuration.ToString('hh\:mm\:ss')) Since: $lastActiveTime. Total: $($totalActiveDuration.ToString('hh\:mm\:ss')) Since: $firstActiveTime"
     } else {
         $activeDuration = [TimeSpan]::FromSeconds(0)
-        $isActive = $false  # Reset flag when becoming idle
-        #$output = "Idle time exceeded $idleTime minutes. Resetting active time counter. Total active time in this session so far: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
-		$output = "Idle: >$idleTime mins. Reset counter. Total: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
+        $isActive = $false
+        $output = "Idle: >$idleTime mins. Reset counter. Total: $($totalActiveDuration.ToString('hh\:mm\:ss'))"
     }
 
-    # Pad the output string with spaces and then trim it to fit within the console window
     $paddedOutput = $output.PadRight($maxOutputLength).Substring(0, $maxOutputLength)
-
     Write-Host "`r$paddedOutput" -NoNewline
 }
